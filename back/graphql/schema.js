@@ -2,7 +2,7 @@ const { graphql, buildSchema } = require("graphql");
 
 module.exports = buildSchema(`
     type Query {
-        hello: String
+        posts(page: Int): PostData!
     }
     type Mutation {
         createUser(signupInput: signupInput!) : User!
@@ -29,6 +29,11 @@ module.exports = buildSchema(`
         creator: User!
         createdAt: String!
         updatedAt: String!
+    }
+    type PostData {
+        posts: [Post!]!
+        totalPosts: Int!
+
     }
     input signupInput {
         email: String!
