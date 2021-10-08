@@ -70,6 +70,7 @@ module.exports = {
     };
   },
   createPost: async (args, req) => {
+    console.log("creating post");
     if (!req.isAuth) {
       const error = new Error("로그인 후 이용해주세요");
       error.code = 401;
