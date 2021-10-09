@@ -33,7 +33,7 @@ const fileFilter = (req, file, cb) => {
 };
 
 // app.use(bodyParser.urlencoded()); // x-www-form-urlencoded <form>
-app.use(bodyParser.json()); // application/json
+app.use(express.json()); // application/json
 app.use(
   multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
 );
@@ -58,7 +58,6 @@ const resolvers = require("./graphql/resolvers");
 app.use(auth);
 
 app.put("/post-image", (req, res, next) => {
-  console.log("put image");
   if (!req.isAuth) {
     throw new Error("로그인이 필요한 서비스입니다.");
   }
@@ -72,7 +71,7 @@ app.put("/post-image", (req, res, next) => {
   }
   return res.status(201).json({
     message: "이미지 파일이 저장되었습니다.",
-    filePath: req.file.path,
+    filePath: req.file.path.replace(/\\/g, "/"),
   });
 });
 

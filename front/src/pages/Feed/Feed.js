@@ -168,7 +168,6 @@ class Feed extends Component {
     const formData = new FormData();
     // formData.append("title", postData.title);
     // formData.append("content", postData.content);
-
     formData.append("image", postData.image);
     if (this.state.editPost) {
       formData.append("oldPath", this.state.editPost.imagePath);
@@ -182,7 +181,6 @@ class Feed extends Component {
     })
       .then((res) => res.json())
       .then((fileResData) => {
-        console.log(fileResData);
         const imageUrl = fileResData.filePath;
         let graphqlQuery = {
           query: `
@@ -204,6 +202,31 @@ class Feed extends Component {
           }
         `,
         };
+
+        if (this.state.editPost) {
+          graphqlQuery = {
+            query: `
+            mutation {
+              updatePost(
+                postId: "${this.state.editPost._id}",
+                postInput: {
+                    title: "${postData.title}",
+                    content: "${postData.content}",
+                    imageUrl: "${imageUrl}",
+              }) {
+                _id
+                title
+                content
+                imageUrl
+                creator {
+                  name
+                }
+                createdAt
+              } 
+            }
+          `,
+          };
+        }
 
         return fetch("http://localhost:8080/graphql", {
           method: "POST",
@@ -227,15 +250,21 @@ class Feed extends Component {
         if (resData.errors) {
           throw new Error("예상치 못한 오류로 게시글 입력에 실패하였습니다.");
         }
-        console.log(resData);
+        let resDataField = "createPost";
+
+        if (this.state.editPost) {
+          resDataField = "updatePost";
+        }
+
         const post = {
-          _id: resData.data.createPost._id,
-          title: resData.data.createPost.title,
-          content: resData.data.createPost.content,
-          creator: resData.data.createPost.creator,
-          createdAt: resData.data.createPost.createdAt,
-          imagePath: resData.data.createPost.imageUrl,
+          _id: resData.data[resDataField]._id,
+          title: resData.data[resDataField].title,
+          content: resData.data[resDataField].content,
+          creator: resData.data[resDataField].creator,
+          createdAt: resData.data[resDataField].createdAt,
+          imagePath: resData.data[resDataField].imageUrl,
         };
+
         this.setState((prevState) => {
           let updatedPosts = [...prevState.posts];
           if (prevState.editPost) {
@@ -272,16 +301,25 @@ class Feed extends Component {
 
   deletePostHandler = (postId) => {
     this.setState({ postsLoading: true });
-    fetch("http://localhost:8080/feed/post/" + postId, {
-      method: "DELETE",
+    const graphqlQuery = {
+      query: `
+        query {
+          deletePost(postId: "${postId}")
+        }
+      `,
+    };
+    fetch("http://localhost:8080/graphql", {
+      method: "POST",
       headers: {
         Authorization: "Bearer " + this.props.token,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify(graphqlQuery),
     })
       .then((res) => {
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error("Deleting a post failed!");
-        }
+        // if (res.status !== 200 && res.status !== 201) {
+        //   throw new Error("Deleting a post failed!");
+        // }
         return res.json();
       })
       .then((resData) => {

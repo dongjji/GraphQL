@@ -131,4 +131,77 @@ module.exports = {
       totalPosts,
     };
   },
+  post: async (args, req) => {
+    const postId = args.postId;
+    if (!req.isAuth) {
+      const error = new Error("로그인 후 이용해주세요");
+      error.code = 401;
+      throw error;
+    }
+    const post = await Post.findById(postId).populate("creator");
+    if (!post) {
+      const error = new Error("해당 포스트가 존재하지 않습니다");
+      error.code = 404;
+      throw error;
+    }
+    return {
+      ...post._doc,
+      _id: post._id.toString(),
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+    };
+  },
+  updatePost: async (args, req) => {
+    const { postId, postInput } = args;
+    if (!req.isAuth) {
+      const error = new Error("로그인 후 이용해주세요");
+      error.code = 401;
+      throw error;
+    }
+    const post = await Post.findById(postId).populate("creator");
+    if (!post) {
+      const error = new Error("해당 포스트가 존재하지 않습니다");
+      error.code = 404;
+      throw error;
+    }
+    if (post.creator._id.toString() !== req.userId.toString()) {
+      const error = new Error("해당 게시글을 수정할 권한이 없습니다");
+      error.code = 404;
+      throw error;
+    }
+    const { title, content, imageUrl } = postInput;
+    post.title = title;
+    post.content = content;
+    if (imageUrl !== "undefined") {
+      post.imageUrl = imageUrl;
+    }
+    const updatedPost = await post.save();
+    return {
+      ...updatedPost._doc,
+      _id: updatedPost._id.toString(),
+      createdAt: updatedPost.createdAt.toISOString(),
+      updatedAt: updatedPost.updatedAt.toISOString(),
+    };
+  },
+  deletePost: async (args, req) => {
+    const { postId } = args;
+    if (!req.isAuth) {
+      const error = new Error("로그인 후 이용해주세요");
+      error.code = 401;
+      throw error;
+    }
+    const post = await Post.findById(postId).populate("creator");
+    if (!post) {
+      const error = new Error("해당 포스트가 존재하지 않습니다");
+      error.code = 404;
+      throw error;
+    }
+    if (post.creator._id.toString() !== req.userId.toString()) {
+      const error = new Error("해당 게시글을 삭제할 권한이 없습니다");
+      error.code = 404;
+      throw error;
+    }
+    const deletePost = await post.deleteOne({ _id: postId });
+    return true;
+  },
 };

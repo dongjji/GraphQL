@@ -3,11 +3,14 @@ const { graphql, buildSchema } = require("graphql");
 module.exports = buildSchema(`
     type Query {
         posts(page: Int): PostData!
+        post(postId: ID!): Post!
+        deletePost(postId: ID!): Boolean
     }
     type Mutation {
         createUser(signupInput: signupInput!) : User!
         login(loginInput: loginInput!) : AuthData!
         createPost(postInput: postInput!) : Post!
+        updatePost(postId: ID!, postInput: postInput!) : Post!
     }
     type User {
         _id: ID!
